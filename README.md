@@ -223,7 +223,9 @@ Overlap checking and insertion run inside a `BEGIN IMMEDIATE` SQLite transaction
 
 ### Patient and clinician records
 
-Clinician and patient records are auto-created on first use (just `id` + `name`). A real EMR/EHR would have rich patient demographics (DOB, contact info, insurance, etc.) typically managed by a dedicated service.
+Clinician and patient records are auto-created on first use using the caller-supplied `clinicianId` and `patientId` strings (e.g. `"dr-smith"`, `"alice"`). There is no registration flow — any string is accepted as a valid ID.
+
+In production, clinicians and patients would be registered through dedicated endpoints (or sourced from an HR/identity system), generating system-assigned UUIDs or integer PKs. `POST /v1/appointments` would then reference those pre-existing IDs, with the database enforcing them as `NOT NULL` foreign keys with referential integrity constraints. Patient records in a real EMR/EHR would also carry rich demographics (DOB, contact info, insurance) managed by a dedicated service.
 
 ### Pagination
 
@@ -232,3 +234,14 @@ Offset-based pagination (`limit`/`offset`) is used. It is simple and correct for
 ### API versioning
 
 All routes are prefixed with `/v1`. This allows future breaking changes to be released under `/v2` without affecting existing clients.
+
+### OpenAPI schema definitions
+
+Route schemas are defined using Fastify's native JSON Schema format, which `@fastify/swagger` reads directly to generate the OpenAPI spec. Zod is used separately for runtime validation inside each handler via `safeParse`.
+
+This means there are two schema definitions per route — one JSON Schema object for documentation, one Zod schema for validation. This duplication was a deliberate trade-off over the alternative of using a type provider bridge such as `fastify-type-provider-zod`, which was considered and rejected for the following reasons:
+
+- **Unverified dependency.** `fastify-type-provider-zod` is a community package, not maintained by the Fastify core team. Routing all validation and serialization through an unaudited third party is a meaningful risk for a system handling patient data.
+- **Zod refinements are silently dropped.** `.refine()` and `.superRefine()` predicates do not translate to JSON Schema, so cross-field rules (_start must be in the future_, _end must be after start_) would be invisible in the OpenAPI spec — enforced at runtime but absent from the published contract.
+- **Validation error shape inconsistency.** When the type provider intercepts a bad request before the handler runs, it returns its own error structure rather than the documented `{ error: string }` shape, requiring a custom `setErrorHandler` to normalise responses.
+- **Slower serialization.** The type provider replaces Fastify's `fast-json-stringify` serializer with Zod, which is measurably slower under high throughput.

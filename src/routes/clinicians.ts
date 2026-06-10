@@ -1,17 +1,10 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Database } from 'better-sqlite3';
-import { z } from 'zod';
-
-const isoDatetime = z
-  .string()
-  .refine((s) => !isNaN(new Date(s).getTime()), { message: 'Must be a valid ISO datetime' });
-
-const listQuerySchema = z.object({
-  from: isoDatetime.optional(),
-  to: isoDatetime.optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-});
+import {
+  listQuerySchema,
+  appointmentProperties,
+  paginationQuerystring,
+} from '../schemas/appointment.js';
 
 interface AppointmentRow {
   id: string;
@@ -41,42 +34,71 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
   const { db } = opts;
 
   // GET /v1/clinicians/:id/appointments
-  app.get<{ Params: { id: string } }>('/clinicians/:id/appointments', { schema: { tags: ['clinicians'] } }, async (req, reply) => {
-    const { id } = req.params;
+  app.get<{ Params: { id: string } }>(
+    '/clinicians/:id/appointments',
+    {
+      schema: {
+        tags: ['clinicians'],
+        params: {
+          type: 'object',
+          required: ['id'],
+          properties: {
+            id: { type: 'string', description: 'Clinician ID' },
+          },
+        },
+        querystring: paginationQuerystring,
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              data: { type: 'array', items: { type: 'object', properties: appointmentProperties } },
+              total: { type: 'integer' },
+              limit: { type: 'integer' },
+              offset: { type: 'integer' },
+            },
+          },
+          404: { type: 'object', properties: { error: { type: 'string' } } },
+        },
+      },
+    },
+    async (req, reply) => {
+      const { id } = req.params;
 
-    const clinician = db.prepare('SELECT id FROM clinicians WHERE id = ?').get(id);
-    if (!clinician) {
-      return reply.status(404).send({ error: `Clinician '${id}' not found` });
+      const clinician = db.prepare('SELECT id FROM clinicians WHERE id = ?').get(id);
+      if (!clinician) {
+        return reply.status(404).send({ error: `Clinician '${id}' not found` });
+      }
+
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          error: 'Invalid query parameters',
+          details: parsed.error.flatten((i) => i.message),
+        });
+      }
+
+      const { from, to, limit, offset } = parsed.data;
+      const fromIso = from ? new Date(from).toISOString() : new Date().toISOString();
+
+      const conditions = ['clinician_id = ?', 'start >= ?'];
+      const params: unknown[] = [id, fromIso];
+
+      if (to) {
+        conditions.push('start <= ?');
+        params.push(new Date(to).toISOString());
+      }
+
+      const where = `WHERE ${conditions.join(' AND ')}`;
+
+      const { count } = db
+        .prepare(`SELECT COUNT(*) as count FROM appointments ${where}`)
+        .get(...(params as [])) as { count: number };
+
+      const rows = db
+        .prepare(`SELECT * FROM appointments ${where} ORDER BY start ASC LIMIT ? OFFSET ?`)
+        .all(...(params as []), limit, offset) as AppointmentRow[];
+
+      return reply.send({ data: rows.map(formatRow), total: count, limit, offset });
     }
-
-    const parsed = listQuerySchema.safeParse(req.query);
-    if (!parsed.success) {
-      return reply
-        .status(400)
-        .send({ error: 'Invalid query parameters', details: parsed.error.flatten() });
-    }
-
-    const { from, to, limit, offset } = parsed.data;
-    const fromIso = from ? new Date(from).toISOString() : new Date().toISOString();
-
-    const conditions = ['clinician_id = ?', 'start >= ?'];
-    const params: unknown[] = [id, fromIso];
-
-    if (to) {
-      conditions.push('start <= ?');
-      params.push(new Date(to).toISOString());
-    }
-
-    const where = `WHERE ${conditions.join(' AND ')}`;
-
-    const { count } = db
-      .prepare(`SELECT COUNT(*) as count FROM appointments ${where}`)
-      .get(...(params as [])) as { count: number };
-
-    const rows = db
-      .prepare(`SELECT * FROM appointments ${where} ORDER BY start ASC LIMIT ? OFFSET ?`)
-      .all(...(params as []), limit, offset) as AppointmentRow[];
-
-    return reply.send({ data: rows.map(formatRow), total: count, limit, offset });
-  });
+  );
 }
