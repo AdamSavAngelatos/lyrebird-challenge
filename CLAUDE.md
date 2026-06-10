@@ -33,11 +33,18 @@ src/
   types.ts            Role type + Fastify request augmentation
   utils/overlap.ts    Overlap detection logic (pure function)
   middleware/role.ts  X-Role header extraction + requireRole guard
+  schemas/
+    appointment.ts    TypeScript interfaces + JSON Schema objects for OpenAPI
+  services/
+    appointmentService.ts  createAppointment, listAppointments business logic
+    clinicianService.ts    getClinicianAppointments business logic
   routes/
-    appointments.ts   POST /v1/appointments, GET /v1/appointments
-    clinicians.ts     GET /v1/clinicians/:id/appointments
+    appointments.ts   HTTP layer — POST /v1/appointments, GET /v1/appointments
+    clinicians.ts     HTTP layer — GET /v1/clinicians/:id/appointments
 tests/
-  unit/overlap.test.ts         Pure overlap logic
+  unit/overlap.test.ts                Pure overlap logic
+  unit/appointmentService.test.ts     createAppointment + listAppointments
+  unit/clinicianService.test.ts       getClinicianAppointments
   integration/appointments.test.ts
   integration/clinicians.test.ts
 ```
