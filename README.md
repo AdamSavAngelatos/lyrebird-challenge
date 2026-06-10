@@ -227,6 +227,14 @@ Clinician and patient records are auto-created on first use using the caller-sup
 
 In production, clinicians and patients would be registered through dedicated endpoints (or sourced from an HR/identity system), generating system-assigned UUIDs or integer PKs. `POST /v1/appointments` would then reference those pre-existing IDs, with the database enforcing them as `NOT NULL` foreign keys with referential integrity constraints. Patient records in a real EMR/EHR would also carry rich demographics (DOB, contact info, insurance) managed by a dedicated service.
 
+### Health checks and observability
+
+There is no health check endpoint (e.g. `GET /health`), metrics endpoint, or structured logging beyond Fastify's default request logs. A production deployment would typically expose a health check for load balancer probes, emit metrics (e.g. request latency, error rates) to a monitoring system such as Prometheus or Datadog, and use structured, correlated logs for distributed tracing.
+
+### Caching
+
+No caching layer is implemented. All requests query SQLite directly. For a production system serving repeated read requests (e.g. clinician schedule views), an in-process cache (e.g. TTL-based map) or external cache (e.g. Redis) in front of the database would reduce latency and load. Cache invalidation would need to account for new appointments being booked.
+
 ### Pagination
 
 Offset-based pagination (`limit`/`offset`) is used. It is simple and correct for bounded appointment datasets. Cursor-based pagination would be more robust for very large or rapidly-changing datasets but adds complexity beyond this challenge's scope.
