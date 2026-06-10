@@ -52,3 +52,4 @@ All endpoints are prefixed with `/v1`. Swagger UI is available at `http://localh
 - Role auth is a simulation: pass `X-Role: admin|clinician|patient` header. No real credential verification.
 - Overlap check + insert run inside a `BEGIN IMMEDIATE` transaction to prevent race conditions.
 - Dates are stored as ISO 8601 UTC strings, normalized via `new Date(x).toISOString()` on input.
+- npm packages use `~` (tilde) versioning to allow patch updates only (e.g. `~1.2.3`), keeping minor and major versions locked.
