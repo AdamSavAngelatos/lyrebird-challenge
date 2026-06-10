@@ -176,7 +176,7 @@ describe('GET /v1/appointments (admin)', () => {
     });
   }
 
-  it('returns 400 with field-level detail for an invalid query param', async () => {
+  it('returns 400 with a descriptive message for an invalid query param', async () => {
     const res = await app.inject({
       method: 'GET',
       url: '/v1/appointments?from=not-a-date',
@@ -185,8 +185,7 @@ describe('GET /v1/appointments (admin)', () => {
 
     expect(res.statusCode).toBe(400);
     const body = res.json();
-    expect(body.error).toBe('Validation error');
-    expect(body.details.fieldErrors.from).toBeDefined();
+    expect(body.message).toBe('querystring/from must match format "date-time"');
   });
 
   it('returns 403 without admin role', async () => {

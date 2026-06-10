@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Database } from 'better-sqlite3';
 import {
-  listQuerySchema,
+  type ListQuery,
   clinicianParams,
   paginationQuerystring,
   paginatedAppointmentsResponse,
@@ -36,7 +36,7 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
   const { db } = opts;
 
   // GET /v1/clinicians/:id/appointments
-  app.get<{ Params: { id: string } }>(
+  app.get<{ Params: { id: string }; Querystring: ListQuery }>(
     '/clinicians/:id/appointments',
     {
       schema: {
@@ -45,6 +45,7 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
         querystring: paginationQuerystring,
         response: {
           200: { description: 'List of clinician appointments', ...paginatedAppointmentsResponse },
+          400: { description: 'Invalid query parameters', ...errorSchema },
           404: { description: 'Clinician not found', ...errorSchema },
         },
       },
@@ -57,15 +58,7 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
         return reply.status(404).send({ error: `Clinician '${id}' not found` });
       }
 
-      const parsed = listQuerySchema.safeParse(req.query);
-      if (!parsed.success) {
-        return reply.status(400).send({
-          error: 'Invalid query parameters',
-          details: parsed.error.flatten((i) => i.message),
-        });
-      }
-
-      const { from, to, limit, offset } = parsed.data;
+      const { from, to, limit, offset } = req.query;
       const fromIso = from ? new Date(from).toISOString() : new Date().toISOString();
 
       const conditions = ['clinician_id = ?', 'start >= ?'];

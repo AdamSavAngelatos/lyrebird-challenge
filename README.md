@@ -243,6 +243,12 @@ Offset-based pagination (`limit`/`offset`) is used. It is simple and correct for
 
 All routes are prefixed with `/v1`. This allows future breaking changes to be released under `/v2` without affecting existing clients.
 
+### Validation
+
+Input validation is handled in two layers. Fastify's built-in AJV validator enforces structural rules defined in the JSON Schema on each route (required fields, types, datetime format, integer ranges) before the handler runs. Business rules that JSON Schema cannot express — _start must be in the future_, _end must be after start_ — are enforced with explicit checks inside the handler.
+
+There is no dedicated validation library (e.g. Zod, Joi). For the current rule set this is sufficient, but as business rules grow in number or complexity (conditional constraints, cross-entity rules, reusable validation logic), hand-rolled checks become harder to maintain and a schema validation library would be worth reintroducing.
+
 ### OpenAPI schema definitions
 
 Route schemas are defined using Fastify's native JSON Schema format, which `@fastify/swagger` reads directly to generate the OpenAPI spec. Zod is used separately for runtime validation inside each handler via `safeParse`.

@@ -3,9 +3,9 @@ import type { Database } from 'better-sqlite3';
 import { v4 as uuid } from 'uuid';
 import { requireRole } from '../middleware/role.js';
 import {
-  createAppointmentSchema,
+  type CreateAppointmentBody,
+  type ListQuery,
   createAppointmentBody,
-  listQuerySchema,
   appointmentProperties,
   errorSchema,
   paginationQuerystring,
@@ -40,30 +40,39 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
   const { db } = opts;
 
   // POST /v1/appointments
-  app.post(
+  app.post<{ Body: CreateAppointmentBody }>(
     '/appointments',
     {
       schema: {
         tags: ['appointments'],
         body: createAppointmentBody,
         response: {
-          201: { description: 'Appointment created', type: 'object', properties: appointmentProperties },
+          201: {
+            description: 'Appointment created',
+            type: 'object',
+            properties: appointmentProperties,
+          },
           400: { description: 'Invalid request body', ...errorSchema },
           409: { description: 'Clinician has a conflicting appointment', ...errorSchema },
         },
       },
     },
     async (req, reply) => {
-      const parsed = createAppointmentSchema.safeParse(req.body);
-      if (!parsed.success) {
-        return reply
-          .status(400)
-          .send({ error: 'Invalid request', details: parsed.error.flatten((i) => i.message) });
+      const { clinicianId, patientId, start, end } = req.body;
+
+      // AJV has already validated that start and end are valid ISO datetimes.
+      // These checks enforce business rules that JSON Schema cannot express.
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+      if (startDate <= new Date()) {
+        return reply.status(400).send({ error: 'start must be in the future' });
+      }
+      if (endDate <= startDate) {
+        return reply.status(400).send({ error: 'end must be after start' });
       }
 
-      const { clinicianId, patientId, start, end } = parsed.data;
-      const startIso = new Date(start).toISOString();
-      const endIso = new Date(end).toISOString();
+      const startIso = startDate.toISOString();
+      const endIso = endDate.toISOString();
       const now = new Date().toISOString();
 
       const insertAppointment = db.transaction(() => {
@@ -114,7 +123,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
   );
 
   // GET /v1/appointments (admin only)
-  app.get(
+  app.get<{ Querystring: ListQuery }>(
     '/appointments',
     {
       schema: {
@@ -130,17 +139,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
     async (req, reply) => {
       requireRole(req, 'admin');
 
-      const parsed = listQuerySchema.safeParse(req.query);
-      if (!parsed.success) {
-        return reply
-          .status(400)
-          .send({
-            error: 'Invalid query parameters',
-            details: parsed.error.flatten((i) => i.message),
-          });
-      }
-
-      const { from, to, limit, offset } = parsed.data;
+      const { from, to, limit, offset } = req.query;
       const fromIso = from ? new Date(from).toISOString() : new Date().toISOString();
 
       const conditions = ['start >= ?'];

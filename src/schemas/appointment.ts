@@ -1,35 +1,18 @@
-import { z } from 'zod';
+// --- TypeScript interfaces (for Fastify route generics) ---
 
-// --- Zod (runtime validation) ---
+export interface CreateAppointmentBody {
+  clinicianId: string;
+  patientId: string;
+  start: string;
+  end: string;
+}
 
-export const isoDatetime = z
-  .string()
-  .refine((s) => !isNaN(new Date(s).getTime()), { message: 'Must be a valid ISO datetime' });
-
-export const createAppointmentSchema = z
-  .object({
-    clinicianId: z.string().min(1, 'clinicianId is required'),
-    patientId: z.string().min(1, 'patientId is required'),
-    start: isoDatetime,
-    end: isoDatetime,
-  })
-  .superRefine((data, ctx) => {
-    const s = new Date(data.start);
-    const e = new Date(data.end);
-    if (s >= e) {
-      ctx.addIssue({ code: 'custom', path: ['end'], message: 'end must be after start' });
-    }
-    if (s <= new Date()) {
-      ctx.addIssue({ code: 'custom', path: ['start'], message: 'start must be in the future' });
-    }
-  });
-
-export const listQuerySchema = z.object({
-  from: isoDatetime.optional(),
-  to: isoDatetime.optional(),
-  limit: z.coerce.number().int().min(1).max(200).default(50),
-  offset: z.coerce.number().int().min(0).default(0),
-});
+export interface ListQuery {
+  from?: string;
+  to?: string;
+  limit: number;
+  offset: number;
+}
 
 // --- JSON Schema (OpenAPI / Swagger) ---
 
@@ -65,7 +48,16 @@ export const errorSchema = {
   type: 'object',
   properties: {
     error: { type: 'string' },
+    message: { type: 'string' },
     details: { type: 'object', additionalProperties: true },
+  },
+};
+
+export const clinicianParams = {
+  type: 'object',
+  required: ['id'],
+  properties: {
+    id: { type: 'string', description: 'Clinician ID' },
   },
 };
 
@@ -84,14 +76,6 @@ export const paginationQuerystring = {
     },
     limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
     offset: { type: 'integer', minimum: 0, default: 0 },
-  },
-};
-
-export const clinicianParams = {
-  type: 'object',
-  required: ['id'],
-  properties: {
-    id: { type: 'string', description: 'Clinician ID' },
   },
 };
 

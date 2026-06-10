@@ -1,4 +1,4 @@
-import Fastify, { type FastifyError } from 'fastify';
+import Fastify from 'fastify';
 import type { Database } from 'better-sqlite3';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -28,21 +28,6 @@ export async function createApp(db: Database) {
   await app.register(swaggerUi, {
     routePrefix: '/docs',
     uiConfig: { docExpansion: 'list' },
-  });
-
-  app.setErrorHandler((error: FastifyError, _req, reply) => {
-    if (error.validation) {
-      const fieldErrors: Record<string, string[]> = {};
-      for (const v of error.validation) {
-        const field =
-          v.instancePath.replace(/^\//, '') ||
-          (v.params as Record<string, string>)?.missingProperty ||
-          'unknown';
-        fieldErrors[field] = [...(fieldErrors[field] ?? []), v.message ?? 'Invalid value'];
-      }
-      return reply.status(400).send({ error: 'Validation error', details: { fieldErrors } });
-    }
-    reply.status(error.statusCode ?? 500).send({ error: error.message });
   });
 
   registerRoleMiddleware(app);
