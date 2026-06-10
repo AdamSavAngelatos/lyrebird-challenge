@@ -80,19 +80,19 @@ Create a new appointment. Auto-creates clinician and patient records if they don
 ```json
 {
   "clinicianId": "dr-smith",
-  "patientId":   "john-doe",
-  "start":       "2026-07-01T09:00:00Z",
-  "end":         "2026-07-01T10:00:00Z"
+  "patientId": "john-doe",
+  "start": "2026-07-01T09:00:00Z",
+  "end": "2026-07-01T10:00:00Z"
 }
 ```
 
 **Responses:**
 
-| Status | Meaning |
-|---|---|
-| 201 | Appointment created |
-| 400 | Invalid input (bad datetime, start ≥ end, start in past) |
-| 409 | Time slot overlaps an existing appointment for this clinician |
+| Status | Meaning                                                       |
+| ------ | ------------------------------------------------------------- |
+| 201    | Appointment created                                           |
+| 400    | Invalid input (bad datetime, start ≥ end, start in past)      |
+| 409    | Time slot overlaps an existing appointment for this clinician |
 
 **Example:**
 
@@ -115,18 +115,27 @@ List upcoming appointments for a clinician.
 
 **Query params (all optional):**
 
-| Param | Type | Default | Description |
-|---|---|---|---|
-| `from` | ISO datetime | now | Filter: start ≥ from |
-| `to` | ISO datetime | — | Filter: start ≤ to |
-| `limit` | integer (1–200) | 50 | Page size |
-| `offset` | integer | 0 | Page offset |
+| Param    | Type            | Default | Description          |
+| -------- | --------------- | ------- | -------------------- |
+| `from`   | ISO datetime    | now     | Filter: start ≥ from |
+| `to`     | ISO datetime    | —       | Filter: start ≤ to   |
+| `limit`  | integer (1–200) | 50      | Page size            |
+| `offset` | integer         | 0       | Page offset          |
 
 **Response:**
 
 ```json
 {
-  "data": [{ "id": "...", "clinicianId": "...", "patientId": "...", "start": "...", "end": "...", "createdAt": "..." }],
+  "data": [
+    {
+      "id": "...",
+      "clinicianId": "...",
+      "patientId": "...",
+      "start": "...",
+      "end": "...",
+      "createdAt": "..."
+    }
+  ],
   "total": 5,
   "limit": 50,
   "offset": 0
@@ -145,7 +154,7 @@ curl -s "http://localhost:3000/v1/clinicians/dr-smith/appointments?from=2026-07-
 
 ---
 
-### GET /v1/appointments *(admin only)*
+### GET /v1/appointments _(admin only)_
 
 List all upcoming appointments across all clinicians. Requires `X-Role: admin`.
 
@@ -191,12 +200,12 @@ curl -s -X POST http://localhost:3000/v1/appointments \
 
 SQLite is used as recommended by the challenge spec and is suitable for development and testing. It has significant limitations for a production clinic system:
 
-| Limitation | Detail | Production recommendation |
-|---|---|---|
-| No horizontal scaling | SQLite is a single file on one machine — multiple app instances cannot share it | PostgreSQL (client-server, network-accessible) |
-| Serialized writes | Only one write transaction at a time, even with WAL mode | PostgreSQL MVCC handles concurrent writes without a global lock |
-| No replication | No read replicas, no standby/failover | PostgreSQL streaming replication or managed DBs (AWS RDS, Supabase) |
-| No enforced types | `DATETIME` in SQLite is cosmetic — no constraint enforcement | PostgreSQL `TIMESTAMPTZ`, `UUID`, check constraints |
+| Limitation            | Detail                                                                          | Production recommendation                                           |
+| --------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| No horizontal scaling | SQLite is a single file on one machine — multiple app instances cannot share it | PostgreSQL (client-server, network-accessible)                      |
+| Serialized writes     | Only one write transaction at a time, even with WAL mode                        | PostgreSQL MVCC handles concurrent writes without a global lock     |
+| No replication        | No read replicas, no standby/failover                                           | PostgreSQL streaming replication or managed DBs (AWS RDS, Supabase) |
+| No enforced types     | `DATETIME` in SQLite is cosmetic — no constraint enforcement                    | PostgreSQL `TIMESTAMPTZ`, `UUID`, check constraints                 |
 
 **Recommended production stack:** PostgreSQL + [Prisma](https://www.prisma.io/) or [Drizzle ORM](https://orm.drizzle.team/).
 

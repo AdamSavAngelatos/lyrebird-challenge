@@ -110,7 +110,8 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
 
     if (!result) {
       return reply.status(409).send({
-        error: 'Conflict: the requested time slot overlaps an existing appointment for this clinician',
+        error:
+          'Conflict: the requested time slot overlaps an existing appointment for this clinician',
       });
     }
 

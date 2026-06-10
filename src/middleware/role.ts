@@ -4,8 +4,7 @@ import { VALID_ROLES, type Role } from '../types.js';
 export function registerRoleMiddleware(app: FastifyInstance): void {
   app.addHook('preHandler', async (req: FastifyRequest, reply: FastifyReply) => {
     const rawRole =
-      (req.headers['x-role'] as string | undefined) ??
-      (req.query as Record<string, string>).role;
+      (req.headers['x-role'] as string | undefined) ?? (req.query as Record<string, string>).role;
 
     if (!rawRole) return;
 

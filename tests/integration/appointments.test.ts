@@ -60,7 +60,10 @@ describe('POST /v1/appointments', () => {
 
   it('allows touching appointments (end == next start)', async () => {
     const slot1 = makeSlot(0);
-    const slot2 = { start: slot1.end, end: new Date(new Date(slot1.end).getTime() + 3600000).toISOString() };
+    const slot2 = {
+      start: slot1.end,
+      end: new Date(new Date(slot1.end).getTime() + 3600000).toISOString(),
+    };
 
     await app.inject({
       method: 'POST',
@@ -205,8 +208,8 @@ describe('GET /v1/appointments (admin)', () => {
 
   it('filters by from/to date range', async () => {
     const base = FUTURE_HOUR();
-    await seed('c1', 0);  // +1h
-    await seed('c1', 5);  // +6h
+    await seed('c1', 0); // +1h
+    await seed('c1', 5); // +6h
 
     const from = new Date(base + 4 * 3600000).toISOString();
     const to = new Date(base + 8 * 3600000).toISOString();
