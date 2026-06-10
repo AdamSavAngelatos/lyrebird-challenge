@@ -2,11 +2,11 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Database } from 'better-sqlite3';
 import {
   type ListQuery,
-  clinicianParams,
   paginationQuerystring,
   paginatedAppointmentsResponse,
   errorSchema,
 } from '../schemas/appointment.js';
+import { clinicianParams } from '../schemas/clinician.js';
 import { getClinicianAppointments } from '../services/clinicianService.js';
 
 interface PluginOptions extends FastifyPluginOptions {

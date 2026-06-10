@@ -53,14 +53,6 @@ export const errorSchema = {
   },
 };
 
-export const clinicianParams = {
-  type: 'object',
-  required: ['id'],
-  properties: {
-    id: { type: 'string', description: 'Clinician ID' },
-  },
-};
-
 export const paginationQuerystring = {
   type: 'object',
   properties: {
