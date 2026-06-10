@@ -119,6 +119,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
     {
       schema: {
         tags: ['appointments'],
+        description: 'Requires X-Role: admin',
         querystring: paginationQuerystring,
         response: {
           200: { description: 'List of appointments', ...paginatedAppointmentsResponse },
