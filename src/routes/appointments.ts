@@ -61,7 +61,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
   const { db } = opts;
 
   // POST /v1/appointments
-  app.post('/appointments', async (req, reply) => {
+  app.post('/appointments', { schema: { tags: ['appointments'] } }, async (req, reply) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) {
       return reply.status(400).send({ error: 'Invalid request', details: parsed.error.flatten() });
@@ -119,7 +119,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
   });
 
   // GET /v1/appointments (admin only)
-  app.get('/appointments', async (req, reply) => {
+  app.get('/appointments', { schema: { tags: ['appointments'] } }, async (req, reply) => {
     requireRole(req, 'admin');
 
     const parsed = listQuerySchema.safeParse(req.query);

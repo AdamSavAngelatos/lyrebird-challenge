@@ -41,7 +41,7 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
   const { db } = opts;
 
   // GET /v1/clinicians/:id/appointments
-  app.get<{ Params: { id: string } }>('/clinicians/:id/appointments', async (req, reply) => {
+  app.get<{ Params: { id: string } }>('/clinicians/:id/appointments', { schema: { tags: ['clinicians'] } }, async (req, reply) => {
     const { id } = req.params;
 
     const clinician = db.prepare('SELECT id FROM clinicians WHERE id = ?').get(id);
