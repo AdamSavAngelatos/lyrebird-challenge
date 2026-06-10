@@ -44,8 +44,8 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
         params: clinicianParams,
         querystring: paginationQuerystring,
         response: {
-          200: paginatedAppointmentsResponse,
-          404: errorSchema,
+          200: { description: 'List of clinician appointments', ...paginatedAppointmentsResponse },
+          404: { description: 'Clinician not found', ...errorSchema },
         },
       },
     },

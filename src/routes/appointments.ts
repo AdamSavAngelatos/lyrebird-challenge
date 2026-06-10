@@ -47,9 +47,9 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
         tags: ['appointments'],
         body: createAppointmentBody,
         response: {
-          201: { type: 'object', properties: appointmentProperties },
-          400: errorSchema,
-          409: errorSchema,
+          201: { description: 'Appointment created', type: 'object', properties: appointmentProperties },
+          400: { description: 'Invalid request body', ...errorSchema },
+          409: { description: 'Clinician has a conflicting appointment', ...errorSchema },
         },
       },
     },
@@ -121,8 +121,8 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
         tags: ['appointments'],
         querystring: paginationQuerystring,
         response: {
-          200: paginatedAppointmentsResponse,
-          400: errorSchema,
+          200: { description: 'List of appointments', ...paginatedAppointmentsResponse },
+          400: { description: 'Invalid query parameters', ...errorSchema },
         },
       },
     },
