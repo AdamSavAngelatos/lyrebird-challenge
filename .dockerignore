@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.db
+*.db-wal
+*.db-shm
+.env
+coverage/
+tests/
+.prettierrc
+eslint.config.js
+*.md

@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(apt-cache show *)",
+      "Bash(dpkg -l)",
+      "Bash(sudo -n apt-get install -y make gcc g++)",
+      "Read(//usr/bin/**)",
+      "Bash(npm info *)",
+      "Bash(npm pack *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)"
+    ]
+  }
+}
