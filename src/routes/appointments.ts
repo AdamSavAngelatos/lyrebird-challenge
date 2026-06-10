@@ -4,6 +4,7 @@ import { v4 as uuid } from 'uuid';
 import { requireRole } from '../middleware/role.js';
 import {
   createAppointmentSchema,
+  createAppointmentBody,
   listQuerySchema,
   appointmentProperties,
   errorSchema,
@@ -44,24 +45,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
     {
       schema: {
         tags: ['appointments'],
-        body: {
-          type: 'object',
-          required: ['clinicianId', 'patientId', 'start', 'end'],
-          properties: {
-            clinicianId: { type: 'string', minLength: 1 },
-            patientId: { type: 'string', minLength: 1 },
-            start: {
-              type: 'string',
-              format: 'date-time',
-              description: 'ISO 8601 UTC datetime, must be in the future',
-            },
-            end: {
-              type: 'string',
-              format: 'date-time',
-              description: 'ISO 8601 UTC datetime, must be after start',
-            },
-          },
-        },
+        body: createAppointmentBody,
         response: {
           201: { type: 'object', properties: appointmentProperties },
           400: errorSchema,

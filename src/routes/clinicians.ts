@@ -2,8 +2,10 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Database } from 'better-sqlite3';
 import {
   listQuerySchema,
-  appointmentProperties,
+  clinicianParams,
   paginationQuerystring,
+  paginatedAppointmentsResponse,
+  errorSchema,
 } from '../schemas/appointment.js';
 
 interface AppointmentRow {
@@ -39,25 +41,11 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
     {
       schema: {
         tags: ['clinicians'],
-        params: {
-          type: 'object',
-          required: ['id'],
-          properties: {
-            id: { type: 'string', description: 'Clinician ID' },
-          },
-        },
+        params: clinicianParams,
         querystring: paginationQuerystring,
         response: {
-          200: {
-            type: 'object',
-            properties: {
-              data: { type: 'array', items: { type: 'object', properties: appointmentProperties } },
-              total: { type: 'integer' },
-              limit: { type: 'integer' },
-              offset: { type: 'integer' },
-            },
-          },
-          404: { type: 'object', properties: { error: { type: 'string' } } },
+          200: paginatedAppointmentsResponse,
+          404: errorSchema,
         },
       },
     },
