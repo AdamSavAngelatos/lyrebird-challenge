@@ -176,6 +176,19 @@ describe('GET /v1/appointments (admin)', () => {
     });
   }
 
+  it('returns 400 with field-level detail for an invalid query param', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/appointments?from=not-a-date',
+      headers: { 'x-role': 'admin' },
+    });
+
+    expect(res.statusCode).toBe(400);
+    const body = res.json();
+    expect(body.error).toBe('Validation error');
+    expect(body.details.fieldErrors.from).toBeDefined();
+  });
+
   it('returns 403 without admin role', async () => {
     const res = await app.inject({ method: 'GET', url: '/v1/appointments' });
     expect(res.statusCode).toBe(403);

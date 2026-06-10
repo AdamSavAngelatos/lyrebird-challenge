@@ -48,18 +48,40 @@ export const createAppointmentBody = {
   properties: {
     clinicianId: { type: 'string', minLength: 1 },
     patientId: { type: 'string', minLength: 1 },
-    start: { type: 'string', format: 'date-time', description: 'ISO 8601 UTC datetime, must be in the future' },
-    end: { type: 'string', format: 'date-time', description: 'ISO 8601 UTC datetime, must be after start' },
+    start: {
+      type: 'string',
+      format: 'date-time',
+      description: 'ISO 8601 UTC datetime, must be in the future',
+    },
+    end: {
+      type: 'string',
+      format: 'date-time',
+      description: 'ISO 8601 UTC datetime, must be after start',
+    },
   },
 };
 
-export const errorSchema = { type: 'object', properties: { error: { type: 'string' } } };
+export const errorSchema = {
+  type: 'object',
+  properties: {
+    error: { type: 'string' },
+    details: { type: 'object', additionalProperties: true },
+  },
+};
 
 export const paginationQuerystring = {
   type: 'object',
   properties: {
-    from: { type: 'string', format: 'date-time', description: 'Filter appointments starting from this datetime' },
-    to: { type: 'string', format: 'date-time', description: 'Filter appointments up to this datetime' },
+    from: {
+      type: 'string',
+      format: 'date-time',
+      description: 'Filter appointments starting from this datetime',
+    },
+    to: {
+      type: 'string',
+      format: 'date-time',
+      description: 'Filter appointments up to this datetime',
+    },
     limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
     offset: { type: 'integer', minimum: 0, default: 0 },
   },
