@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const f = JSON.parse\\(require\\('fs'\\).readFileSync\\('./node_modules/fastify/package.json'\\)\\); console.log\\('fastify engines:', f.engines\\)\")",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

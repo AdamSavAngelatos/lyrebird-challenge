@@ -5,6 +5,7 @@ import swaggerUi from '@fastify/swagger-ui';
 import { registerRoleMiddleware } from './middleware/role.js';
 import { appointmentRoutes } from './routes/appointments.js';
 import { clinicianRoutes } from './routes/clinicians.js';
+import pkg from '../package.json' with { type: 'json' };
 
 export async function createApp(db: Database) {
   const app = Fastify({
@@ -16,7 +17,7 @@ export async function createApp(db: Database) {
       info: {
         title: 'Clinic Appointment API',
         description: 'RESTful API for a simplified clinic appointment system',
-        version: '1.0.0',
+        version: pkg.version,
       },
       tags: [
         { name: 'appointments', description: 'Appointment management' },
