@@ -20,7 +20,7 @@ export function registerRoleMiddleware(app: FastifyInstance): void {
 
 export function requireRole(req: FastifyRequest, role: Role): void {
   if (req.role !== role) {
-    const err = Object.assign(new Error(`Forbidden: requires role '${role}'`), { statusCode: 403 });
+    const err = Object.assign(new Error('Forbidden'), { statusCode: 403 });
     throw err;
   }
 }
