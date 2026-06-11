@@ -136,6 +136,19 @@ describe('POST /v1/appointments', () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it('returns 400 for an unrecognised X-Role value', async () => {
+    const slot = makeSlot(0);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      headers: { 'x-role': 'hacker' },
+      payload: { clinicianId: 'c1', patientId: 'p1', ...slot },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/invalid role/i);
+  });
+
   it('returns 400 for an invalid ISO datetime string', async () => {
     const res = await app.inject({
       method: 'POST',
