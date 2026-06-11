@@ -72,19 +72,19 @@ LOG_SQL=1 npm run dev   # print all SQL queries to stdout
 
 ## Docker
 
-> **Note:** The Docker setup has not been tested. The `Dockerfile` is included as a starting point and may require adjustments before use.
-
 ```bash
 # Build
 docker build -t lyrebird-challenge .
 
 # Run (ephemeral — data is lost when container stops)
-docker run -p 3000:3000 lyrebird-challenge
+docker run -p 3001:3001 lyrebird-challenge
 
 # Run with persistent SQLite volume
-docker run -p 3000:3000 \
+# --user ensures the container writes as your host UID, avoiding bind-mount permission errors
+docker run -p 3001:3001 \
   -v "$(pwd)/data:/app/data" \
   -e DB_PATH=/app/data/clinic.db \
+  --user $(id -u):$(id -g) \
   lyrebird-challenge
 ```
 
@@ -287,6 +287,10 @@ Zod was considered and prototyped. It was ultimately rejected for two reasons:
 1. **Duplicate schema definitions.** Fastify's AJV validator requires JSON Schema objects on each route for OpenAPI generation and structural validation. Zod would have introduced a parallel set of schemas for the same fields, with no way to derive one from the other without a third-party adapter (e.g. `fastify-type-provider-zod`, which is not an officially verified package).
 
 2. **Custom error handling required.** AJV runs before the handler and produces structured error messages automatically. Zod's `safeParse` runs inside the handler — any Zod validation failure required a custom Fastify error handler to intercept, reformat, and re-throw errors in a consistent shape. This added coupling between the validation library and the framework's error pipeline that outweighed the benefits at this scale.
+
+### HTTP security headers
+
+Fastify adds no security-related response headers by default. The API responses carry only transport headers (`content-type`, `content-length`, `date`, `connection`). In production, headers such as `X-Content-Type-Options`, `X-Frame-Options`, `Strict-Transport-Security`, and `Content-Security-Policy` should be added. The standard approach is the [`@fastify/helmet`](https://github.com/fastify/fastify-helmet) plugin, which applies a sensible default set in a single `app.register()` call.
 
 ### Timezone handling
 
