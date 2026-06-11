@@ -32,10 +32,10 @@ src/
   app.ts              Fastify app factory (accepts db, exported for tests)
   db.ts               SQLite setup, schema, indexes, WAL mode
   types.ts            Role type + Fastify request augmentation
-  utils/overlap.ts    Overlap detection logic (pure function)
   middleware/role.ts  X-Role header extraction + requireRole guard
   schemas/
     appointment.ts    TypeScript interfaces + JSON Schema objects for OpenAPI
+    clinician.ts      Clinician-specific schema definitions
   services/
     appointmentService.ts  createAppointment, listAppointments business logic
     clinicianService.ts    getClinicianAppointments business logic
@@ -43,7 +43,6 @@ src/
     appointments.ts   HTTP layer — POST /v1/appointments, GET /v1/appointments
     clinicians.ts     HTTP layer — GET /v1/clinicians/:id/appointments
 tests/
-  unit/overlap.test.ts                Pure overlap logic
   unit/appointmentService.test.ts     createAppointment + listAppointments
   unit/clinicianService.test.ts       getClinicianAppointments
   integration/appointments.test.ts
@@ -61,3 +60,13 @@ All endpoints are prefixed with `/v1`. Swagger UI is available at `http://localh
 - Overlap check + insert run inside a `BEGIN IMMEDIATE` transaction to prevent race conditions.
 - Dates are stored as ISO 8601 UTC strings, normalized via `new Date(x).toISOString()` on input.
 - npm packages use `~` (tilde) versioning to allow patch updates only (e.g. `~1.2.3`), keeping minor and major versions locked.
+
+## Fastify Performance
+
+All three routes define full response schemas. Fastify uses these to run `fast-json-stringify` instead of `JSON.stringify` — always define response schemas on new routes.
+
+AJV's `allErrors` is not enabled (Fastify default). Do not enable it: it increases per-request validation overhead and amplifies DoS risk on untrusted input. Enable it only if a route specifically requires returning all field-level errors simultaneously.
+
+New middleware must use Fastify hooks (`addHook`) rather than Express-compatible adapters — adapters add an extra abstraction layer and hurt latency on hot paths.
+
+Source: https://fastify.dev/docs/latest/Guides/Recommendations/#common-causes-of-performance-degradation
