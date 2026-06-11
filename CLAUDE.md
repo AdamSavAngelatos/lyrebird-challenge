@@ -4,12 +4,13 @@ A RESTful API built with TypeScript + Fastify for a simplified clinic appointmen
 
 ## Tech Stack
 
-- **Runtime**: Node.js 24, TypeScript 5 (ESM)
-- **Framework**: Fastify 5
+- **Runtime**: Node.js 20+, TypeScript 6 (ESM)
+- **Framework**: Fastify 5 (`fastify`, `@fastify/swagger`, `@fastify/swagger-ui`)
 - **Database**: SQLite via `better-sqlite3` (WAL mode)
-- **Validation**: Zod
-- **Testing**: Vitest (unit + integration via `app.inject()`)
-- **Docs**: Auto-generated OpenAPI at `/docs`
+- **Validation**: Fastify's built-in AJV (structural) + explicit handler checks (business rules)
+- **Testing**: Vitest 4 (unit + integration via `app.inject()`)
+- **Docs**: Auto-generated OpenAPI 3 at `/docs`
+- **Dev tooling**: `tsx` (hot reload), ESLint, Prettier
 
 ## Commands
 

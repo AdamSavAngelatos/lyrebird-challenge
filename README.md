@@ -11,9 +11,18 @@ npm run dev     # starts on http://localhost:3000
 
 Swagger UI is available at **http://localhost:3000/docs**.
 
+## Tech Stack
+
+- **Runtime**: Node.js 20+, TypeScript 6 (ESM)
+- **Framework**: Fastify 5 with `@fastify/swagger` + `@fastify/swagger-ui`
+- **Database**: SQLite via `better-sqlite3` (WAL mode)
+- **Validation**: Fastify's built-in AJV (structural) + explicit handler checks (business rules)
+- **Testing**: Vitest 4 (unit + integration)
+- **Dev tooling**: `tsx` (hot reload), ESLint, Prettier
+
 ## Requirements
 
-- Node.js 24+
+- Node.js 20+ (driven by `better-sqlite3`)
 
 ## Running
 
@@ -221,6 +230,8 @@ The server listens on plain HTTP. Clinic appointment data is sensitive — HIPAA
 
 Overlap checking and insertion run inside a `BEGIN IMMEDIATE` SQLite transaction (`db.transaction(...).immediate()`). This acquires a write lock before the overlap `SELECT`, ensuring two concurrent requests for the same clinician cannot both pass the conflict check before either inserts. SQLite serializes all writers, so there is no TOCTOU race condition.
 
+`busy_timeout` is not configured, so SQLite's default of 0ms applies — if a second request tries to acquire the write lock while one is already held, it fails immediately with `SQLITE_BUSY` rather than waiting. Under real concurrent load this would surface as an unhandled 500. A production setup should set `db.pragma('busy_timeout = 5000')` to allow queued writers to wait a short period before failing.
+
 ### Patient and clinician records
 
 Clinician and patient records are auto-created on first use using the caller-supplied `clinicianId` and `patientId` strings (e.g. `"dr-smith"`, `"alice"`). There is no registration flow — any string is accepted as a valid ID.
@@ -249,13 +260,8 @@ Input validation is handled in two layers. Fastify's built-in AJV validator enfo
 
 There is no dedicated validation library (e.g. Zod, Joi). For the current rule set this is sufficient, but as business rules grow in number or complexity (conditional constraints, cross-entity rules, reusable validation logic), hand-rolled checks become harder to maintain and a schema validation library would be worth reintroducing.
 
-### OpenAPI schema definitions
+Zod was considered and prototyped. It was ultimately rejected for two reasons:
 
-Route schemas are defined using Fastify's native JSON Schema format, which `@fastify/swagger` reads directly to generate the OpenAPI spec. Zod is used separately for runtime validation inside each handler via `safeParse`.
+1. **Duplicate schema definitions.** Fastify's AJV validator requires JSON Schema objects on each route for OpenAPI generation and structural validation. Zod would have introduced a parallel set of schemas for the same fields, with no way to derive one from the other without a third-party adapter (e.g. `fastify-type-provider-zod`, which is not an officially verified package).
 
-This means there are two schema definitions per route — one JSON Schema object for documentation, one Zod schema for validation. This duplication was a deliberate trade-off over the alternative of using a type provider bridge such as `fastify-type-provider-zod`, which was considered and rejected for the following reasons:
-
-- **Unverified dependency.** `fastify-type-provider-zod` is a community package, not maintained by the Fastify core team. Routing all validation and serialization through an unaudited third party is a meaningful risk for a system handling patient data.
-- **Zod refinements are silently dropped.** `.refine()` and `.superRefine()` predicates do not translate to JSON Schema, so cross-field rules (_start must be in the future_, _end must be after start_) would be invisible in the OpenAPI spec — enforced at runtime but absent from the published contract.
-- **Validation error shape inconsistency.** When the type provider intercepts a bad request before the handler runs, it returns its own error structure rather than the documented `{ error: string }` shape, requiring a custom `setErrorHandler` to normalise responses.
-- **Slower serialization.** The type provider replaces Fastify's `fast-json-stringify` serializer with Zod, which is measurably slower under high throughput.
+2. **Custom error handling required.** AJV runs before the handler and produces structured error messages automatically. Zod's `safeParse` runs inside the handler — any Zod validation failure required a custom Fastify error handler to intercept, reformat, and re-throw errors in a consistent shape. This added coupling between the validation library and the framework's error pipeline that outweighed the benefits at this scale.
