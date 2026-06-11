@@ -72,7 +72,11 @@ describe('createAppointment', () => {
     const slot = makeSlot(0);
     createAppointment(db, { clinicianId: 'c1', patientId: 'p1', ...slot });
 
-    const result = createAppointment(db, { clinicianId: 'c1', patientId: 'p2', ...makeSlot(30 * 60 * 1000) });
+    const result = createAppointment(db, {
+      clinicianId: 'c1',
+      patientId: 'p2',
+      ...makeSlot(30 * 60 * 1000),
+    });
 
     expect(result.ok).toBe(false);
     if (result.ok) return;

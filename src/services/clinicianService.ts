@@ -1,5 +1,9 @@
 import type { Database } from 'better-sqlite3';
-import type { AppointmentRecord, ListAppointmentsInput, PaginatedAppointments } from './appointmentService.js';
+import type {
+  AppointmentRecord,
+  ListAppointmentsInput,
+  PaginatedAppointments,
+} from './appointmentService.js';
 
 interface AppointmentRow {
   id: string;
@@ -54,6 +58,11 @@ export function getClinicianAppointments(
 
   return {
     ok: true,
-    appointments: { data: rows.map(formatRow), total: count, limit: input.limit, offset: input.offset },
+    appointments: {
+      data: rows.map(formatRow),
+      total: count,
+      limit: input.limit,
+      offset: input.offset,
+    },
   };
 }

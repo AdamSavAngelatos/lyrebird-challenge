@@ -9,7 +9,12 @@
       "Bash(npm info *)",
       "Bash(npm pack *)",
       "Bash(npm run *)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(node -e ' *)",
+      "Read(//home/adam_angelatos/.claude/**)"
+    ],
+    "additionalDirectories": [
+      "/home/adam_angelatos/.claude"
     ]
   }
 }

@@ -41,6 +41,47 @@ describe('GET /v1/clinicians/:id/appointments', () => {
       url: '/v1/clinicians/unknown/appointments',
     });
     expect(res.statusCode).toBe(404);
+    expect(res.json().error).toBe("Clinician 'unknown' not found");
+  });
+
+  it('returns 400 for invalid from query param', async () => {
+    await seedAppointment(app, 'c1', 'p1', 0);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/clinicians/c1/appointments?from=not-a-date',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toBe('querystring/from must match format "date-time"');
+  });
+
+  it('returns 400 for invalid to query param', async () => {
+    await seedAppointment(app, 'c1', 'p1', 0);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/clinicians/c1/appointments?to=not-a-date',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toBe('querystring/to must match format "date-time"');
+  });
+
+  it('returns 400 for non-integer limit', async () => {
+    await seedAppointment(app, 'c1', 'p1', 0);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/clinicians/c1/appointments?limit=abc',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toBe('querystring/limit must be integer');
+  });
+
+  it('returns 400 for negative offset', async () => {
+    await seedAppointment(app, 'c1', 'p1', 0);
+    const res = await app.inject({
+      method: 'GET',
+      url: '/v1/clinicians/c1/appointments?offset=-1',
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().message).toBe('querystring/offset must be >= 0');
   });
 
   it('returns upcoming appointments for a known clinician', async () => {

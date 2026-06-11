@@ -8,7 +8,9 @@ const DEFAULT_DB_PATH = process.env.DB_PATH ?? path.join(__dirname, '..', 'clini
 export type Db = ReturnType<typeof createDb>;
 
 export function createDb(dbPath = DEFAULT_DB_PATH): Database.Database {
-  const db = new Database(dbPath);
+  const db = new Database(dbPath, {
+    verbose: process.env.LOG_SQL ? (sql) => console.log('[sql]', sql) : undefined,
+  });
 
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');

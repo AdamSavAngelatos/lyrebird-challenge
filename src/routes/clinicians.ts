@@ -34,7 +34,10 @@ export async function clinicianRoutes(app: FastifyInstance, opts: PluginOptions)
     async (req, reply) => {
       const result = getClinicianAppointments(db, req.params.id, req.query);
       if (!result.ok) {
-        return reply.status(404).send({ error: `Clinician '${req.params.id}' not found` });
+        switch (result.reason) {
+          case 'not_found':
+            return reply.status(404).send({ error: `Clinician '${req.params.id}' not found` });
+        }
       }
       return reply.send(result.appointments);
     }

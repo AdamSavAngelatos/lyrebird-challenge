@@ -5,3 +5,5 @@ dist/
 *.db-shm
 .env
 coverage/
+.claude/settings.json
+.claude/settings.local.json

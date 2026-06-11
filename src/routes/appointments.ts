@@ -11,6 +11,7 @@ import {
   paginatedAppointmentsResponse,
 } from '../schemas/appointment.js';
 import { createAppointment, listAppointments } from '../services/appointmentService.js';
+import { Roles } from '../types.js';
 
 interface PluginOptions extends FastifyPluginOptions {
   db: Database;
@@ -40,16 +41,17 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
     async (req, reply) => {
       const result = createAppointment(db, req.body);
       if (!result.ok) {
-        if (result.reason === 'conflict') {
-          return reply.status(409).send({
-            error:
-              'Conflict: the requested time slot overlaps an existing appointment for this clinician',
-          });
+        switch (result.reason) {
+          case 'conflict':
+            return reply.status(409).send({
+              error:
+                'Conflict: the requested time slot overlaps an existing appointment for this clinician',
+            });
+          case 'start_not_future':
+            return reply.status(400).send({ error: 'start must be in the future' });
+          case 'end_not_after_start':
+            return reply.status(400).send({ error: 'end must be after start' });
         }
-        if (result.reason === 'start_not_future') {
-          return reply.status(400).send({ error: 'start must be in the future' });
-        }
-        return reply.status(400).send({ error: 'end must be after start' });
       }
       return reply.status(201).send(result.appointment);
     }
@@ -70,7 +72,7 @@ export async function appointmentRoutes(app: FastifyInstance, opts: PluginOption
       },
     },
     async (req, reply) => {
-      requireRole(req, 'admin');
+      requireRole(req, Roles.admin);
       return reply.send(listAppointments(db, req.query));
     }
   );

@@ -1,6 +1,7 @@
 info:
   name: insert-appointment
   type: http
+  seq: 1
 
 http:
   method: POST
@@ -9,9 +10,9 @@ http:
     type: json
     data: |-
       {
-        "clinicianId": "dr-smith",
+        "clinicianId": "dr-matthews",
         "patientId": "alice",
-        "start": "2026-07-02T09:00:00Z",
+        "start": "2026-07-02T09:30:00Z",
         "end": "2026-07-02T10:00:00Z"
       }
   auth: inherit

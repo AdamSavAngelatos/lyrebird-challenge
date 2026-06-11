@@ -40,12 +40,34 @@ npm test             # run all tests (29 unit + integration)
 npm run test:watch   # watch mode
 ```
 
+### Manual testing with Bruno
+
+[Bruno](https://www.usebruno.com/) request collections are included in `tests/bruno/`. They cover the three endpoints and can be run interactively against a live server.
+
+**VSCode:**
+
+1. Install the [Bruno VSCode extension](https://marketplace.visualstudio.com/items?itemName=bruno-api-client.bruno)
+2. Start the dev server: `npm run dev`
+3. Open the Bruno sidebar, click **Open Collection**, and select `tests/bruno/lyrebird-challenge/`
+4. Run individual requests or the full collection from the sidebar
+
 ## Other commands
 
 ```bash
 npm run lint         # ESLint
 npm run format       # Prettier (write)
 npm run format:check # Prettier (check only)
+```
+
+## Environment variables
+
+| Variable  | Default       | Description                                                            |
+| --------- | ------------- | ---------------------------------------------------------------------- |
+| `DB_PATH` | `./clinic.db` | Path to the SQLite database file                                       |
+| `LOG_SQL` | _(unset)_     | Set to any value to log every SQL statement to stdout before execution |
+
+```bash
+LOG_SQL=1 npm run dev   # print all SQL queries to stdout
 ```
 
 ## Docker
@@ -250,9 +272,7 @@ No caching layer is implemented. All requests query SQLite directly. For a produ
 
 Offset-based pagination (`limit`/`offset`) is used. It is simple and correct for bounded appointment datasets. Cursor-based pagination would be more robust for very large or rapidly-changing datasets but adds complexity beyond this challenge's scope.
 
-### API versioning
-
-All routes are prefixed with `/v1`. This allows future breaking changes to be released under `/v2` without affecting existing clients.
+Each paginated response requires two queries: one for the page of rows and one for the total count. This is a fundamental limitation of offset pagination in any SQL database — including PostgreSQL — because the database must scan all matching rows to produce an exact count. PostgreSQL can mitigate this with parallel query workers and index-only scans on large tables, or an approximate count can be read from `pg_class.reltuples` when exactness is not required. The cleanest solution is keyset (cursor-based) pagination, which eliminates the count query entirely by using a `WHERE id > last_seen_id` predicate instead of `OFFSET` — at the cost of no longer supporting random page access.
 
 ### Validation
 
@@ -265,3 +285,9 @@ Zod was considered and prototyped. It was ultimately rejected for two reasons:
 1. **Duplicate schema definitions.** Fastify's AJV validator requires JSON Schema objects on each route for OpenAPI generation and structural validation. Zod would have introduced a parallel set of schemas for the same fields, with no way to derive one from the other without a third-party adapter (e.g. `fastify-type-provider-zod`, which is not an officially verified package).
 
 2. **Custom error handling required.** AJV runs before the handler and produces structured error messages automatically. Zod's `safeParse` runs inside the handler — any Zod validation failure required a custom Fastify error handler to intercept, reformat, and re-throw errors in a consistent shape. This added coupling between the validation library and the framework's error pipeline that outweighed the benefits at this scale.
+
+### Timezone handling
+
+All datetimes are stored and compared as ISO 8601 UTC strings. `new Date(input).toISOString()` is applied to every date on input, which normalises offset-aware strings (e.g. `2026-07-01T11:00:00+02:00`) correctly to UTC before storing. "Now" comparisons use `new Date().toISOString()`, which is always UTC in Node.js.
+
+The implicit assumption is that clients submit ISO 8601 strings. An offset-naive datetime with no `Z` or UTC offset (e.g. `2026-07-01T09:00:00`) is interpreted as UTC by Node.js's `Date` parser — no error is raised, but the appointment would be silently misplaced if the client intended local time. The API does not reject offset-naive inputs.

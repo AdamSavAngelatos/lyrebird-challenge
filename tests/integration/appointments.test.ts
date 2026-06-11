@@ -40,7 +40,7 @@ describe('POST /v1/appointments', () => {
     expect(body.end).toBe(new Date(slot.end).toISOString());
   });
 
-  it('returns 409 for an overlapping appointment', async () => {
+  it('returns 409 for a partially overlapping appointment', async () => {
     const slot = makeSlot(0);
     await app.inject({
       method: 'POST',
@@ -52,6 +52,47 @@ describe('POST /v1/appointments', () => {
       method: 'POST',
       url: '/v1/appointments',
       payload: { clinicianId: 'c1', patientId: 'p2', ...makeSlot(30 * 60 * 1000) }, // 30 min into first slot
+    });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toMatch(/conflict/i);
+  });
+
+  it('returns 409 for a fully contained appointment', async () => {
+    const slot = makeSlot(0); // 1 hour
+    await app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      payload: { clinicianId: 'c1', patientId: 'p1', ...slot },
+    });
+
+    // 15-min slot entirely inside the existing 1-hour slot
+    const inner = {
+      start: new Date(FUTURE_HOUR() + 15 * 60 * 1000).toISOString(),
+      end: new Date(FUTURE_HOUR() + 45 * 60 * 1000).toISOString(),
+    };
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      payload: { clinicianId: 'c1', patientId: 'p2', ...inner },
+    });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.json().error).toMatch(/conflict/i);
+  });
+
+  it('returns 409 for an exact duplicate slot', async () => {
+    const slot = makeSlot(0);
+    await app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      payload: { clinicianId: 'c1', patientId: 'p1', ...slot },
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      payload: { clinicianId: 'c1', patientId: 'p2', ...slot },
     });
 
     expect(res.statusCode).toBe(409);
@@ -105,6 +146,7 @@ describe('POST /v1/appointments', () => {
       payload: { clinicianId: 'c1' },
     });
     expect(res.statusCode).toBe(400);
+    expect(res.json().message).toBe("body must have required property 'patientId'");
   });
 
   it('returns 400 when start is in the past', async () => {
@@ -119,9 +161,10 @@ describe('POST /v1/appointments', () => {
       },
     });
     expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe('start must be in the future');
   });
 
-  it('returns 400 when start >= end', async () => {
+  it('returns 400 when start > end', async () => {
     const now = FUTURE_HOUR();
     const res = await app.inject({
       method: 'POST',
@@ -134,6 +177,19 @@ describe('POST /v1/appointments', () => {
       },
     });
     expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe('end must be after start');
+  });
+
+  it('returns 400 when start == end', async () => {
+    const now = FUTURE_HOUR();
+    const ts = new Date(now).toISOString();
+    const res = await app.inject({
+      method: 'POST',
+      url: '/v1/appointments',
+      payload: { clinicianId: 'c1', patientId: 'p1', start: ts, end: ts },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toBe('end must be after start');
   });
 
   it('returns 400 for an unrecognised X-Role value', async () => {
@@ -161,6 +217,7 @@ describe('POST /v1/appointments', () => {
       },
     });
     expect(res.statusCode).toBe(400);
+    expect(res.json().message).toBe('body/start must match format "date-time"');
   });
 });
 

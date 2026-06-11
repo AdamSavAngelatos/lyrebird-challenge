@@ -9,6 +9,23 @@ http:
   headers:
     - name: x-role
       value: admin
+  params:
+    - name: from
+      value: 2026-07-02T01:30:00Z
+      type: query
+      disabled: true
+    - name: to
+      value: 2026-07-02T01:30:00Z
+      type: query
+      disabled: true
+    - name: limit
+      value: ""
+      type: query
+      disabled: true
+    - name: offset
+      value: ""
+      type: query
+      disabled: true
 
 settings:
   encodeUrl: true
