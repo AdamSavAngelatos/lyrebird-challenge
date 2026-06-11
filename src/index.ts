@@ -1,7 +1,7 @@
 import { createApp } from './app.js';
 import { createDb } from './db.js';
 
-const PORT = parseInt(process.env.PORT ?? '3000', 10);
+const PORT = Number.parseInt(process.env.PORT ?? '3000', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
 
 const db = createDb();
