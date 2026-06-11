@@ -1,3 +1,5 @@
+# NOTE: This Dockerfile has not been tested. Treat it as a starting point only.
+
 # Stage 1: Build — installs all deps and compiles TypeScript
 FROM node:24-alpine AS builder
 WORKDIR /app

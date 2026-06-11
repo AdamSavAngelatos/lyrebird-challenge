@@ -72,6 +72,8 @@ LOG_SQL=1 npm run dev   # print all SQL queries to stdout
 
 ## Docker
 
+> **Note:** The Docker setup has not been tested. The `Dockerfile` is included as a starting point and may require adjustments before use.
+
 ```bash
 # Build
 docker build -t lyrebird-challenge .
