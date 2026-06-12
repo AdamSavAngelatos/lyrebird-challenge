@@ -14,6 +14,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@fastify/swagger": "~9.7.0",
     "@fastify/swagger-ui": "~6.0.0",
