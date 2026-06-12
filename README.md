@@ -2,6 +2,37 @@
 
 A RESTful API for a simplified clinic appointment booking system, built with TypeScript and Fastify.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Tech Stack](#tech-stack)
+- [Requirements](#requirements)
+- [Running](#running)
+- [Testing](#testing)
+  - [Manual testing with Bruno](#manual-testing-with-bruno)
+- [Other commands](#other-commands)
+- [Environment variables](#environment-variables)
+- [Docker](#docker)
+- [API Reference](#api-reference)
+  - [Authentication (simulated)](#authentication-simulated)
+  - [POST /v1/appointments](#post-v1appointments)
+  - [GET /v1/clinicians/:id/appointments](#get-v1cliniciansidappointments)
+  - [GET /v1/appointments (admin only)](#get-v1appointments-admin-only)
+  - [Overlap rejection example](#overlap-rejection-example)
+- [Trade-offs & Limitations](#trade-offs--limitations)
+  - [SQLite vs. production database](#sqlite-vs-production-database)
+  - [Role-based access is a simulation](#role-based-access-is-a-simulation)
+  - [TLS](#tls)
+  - [Concurrency](#concurrency)
+  - [Patient and clinician records](#patient-and-clinician-records)
+  - [Health checks and observability](#health-checks-and-observability)
+  - [Debug SQL logging and PII](#debug-sql-logging-and-pii)
+  - [Caching](#caching)
+  - [Pagination](#pagination)
+  - [Validation](#validation)
+  - [HTTP security headers](#http-security-headers)
+  - [Timezone handling](#timezone-handling)
+
 ## Quick Start
 
 ```bash
