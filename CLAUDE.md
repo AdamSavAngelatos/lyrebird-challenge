@@ -60,6 +60,7 @@ All endpoints are prefixed with `/v1`. Swagger UI is available at `http://localh
 - Overlap check + insert run inside a `BEGIN IMMEDIATE` transaction to prevent race conditions.
 - Dates are stored as ISO 8601 UTC strings, normalized via `new Date(x).toISOString()` on input.
 - npm packages use `~` (tilde) versioning to allow patch updates only (e.g. `~1.2.3`), keeping minor and major versions locked.
+- `LOG_SQL` logs fully expanded SQL with all bound parameter values (patient IDs, clinician IDs, timestamps) as plaintext. Never enable it in production or any environment with real patient data.
 
 ## Fastify Performance
 

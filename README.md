@@ -61,13 +61,13 @@ npm run format:check # Prettier (check only)
 
 ## Environment variables
 
-| Variable  | Default       | Description                                                            |
-| --------- | ------------- | ---------------------------------------------------------------------- |
-| `DB_PATH` | `./clinic.db` | Path to the SQLite database file                                       |
-| `LOG_SQL` | _(unset)_     | Set to any value to log every SQL statement to stdout before execution |
+| Variable  | Default       | Description                                                                                                                                                                                                 |
+| --------- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DB_PATH` | `./clinic.db` | Path to the SQLite database file                                                                                                                                                                            |
+| `LOG_SQL` | _(unset)_     | Set to any value to log every SQL statement to stdout before execution. **Never enable in production or where real patient data is present** — see [Debug SQL logging and PII](#debug-sql-logging-and-pii). |
 
 ```bash
-LOG_SQL=1 npm run dev   # print all SQL queries to stdout
+LOG_SQL=1 npm run dev   # print all SQL queries to stdout (development only)
 ```
 
 ## Docker
@@ -248,7 +248,7 @@ Roles are extracted from the `X-Role` header with no verification. Any caller ca
 
 ### TLS
 
-The server listens on plain HTTP. Clinic appointment data is sensitive — HIPAA (US) and GDPR (EU) both require encryption in transit. In production, TLS termination should be handled by a reverse proxy (nginx, Caddy) or load balancer (AWS ALB) sitting in front of the app.
+The server listens on plain HTTP. Clinic appointment data is sensitive — HIPAA (US), GDPR (EU), UK GDPR (UK), and Australia's Privacy Act 1988 (Cth) all require encryption in transit. In production, TLS termination should be handled by a reverse proxy (nginx, Caddy) or load balancer (AWS ALB) sitting in front of the app.
 
 ### Concurrency
 
@@ -265,6 +265,17 @@ In production, clinicians and patients would be registered through dedicated end
 ### Health checks and observability
 
 There is no health check endpoint (e.g. `GET /health`), metrics endpoint, or structured logging beyond Fastify's default request logs. A production deployment would typically expose a health check for load balancer probes, emit metrics (e.g. request latency, error rates) to a monitoring system such as Prometheus or Datadog, and use structured, correlated logs for distributed tracing.
+
+### Debug SQL logging and PII
+
+Setting `LOG_SQL=1` enables `better-sqlite3`'s `verbose` callback, which logs every SQL statement to stdout. The callback receives the **fully expanded SQL with bound parameter values substituted in** — not just the template with `?` placeholders. Patient IDs, clinician IDs, and appointment timestamps all appear as plaintext literals:
+
+```
+[sql] INSERT OR IGNORE INTO patients (id, name, created_at) VALUES ('alice', 'alice', '2026-06-11T23:48:51.573Z')
+[sql] SELECT 1 FROM appointments WHERE clinician_id = 'dr-adams' AND start < '2026-07-02T10:00:00.000Z' ...
+```
+
+**`LOG_SQL` must never be enabled in production or in any environment where real patient data is present.** If logs are shipped to an aggregator (Datadog, CloudWatch, Splunk), this constitutes a PHI disclosure — a HIPAA violation in the US, a breach of GDPR's data minimisation principle in the EU, a breach of UK GDPR under the Data Protection Act 2018, and a likely breach of APP 11 (security of personal information) under Australia's Privacy Act 1988 (Cth). The env-var gate is the only safeguard; the feature exists solely for local development debugging.
 
 ### Caching
 
